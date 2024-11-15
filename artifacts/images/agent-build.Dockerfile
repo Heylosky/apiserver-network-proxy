@@ -5,7 +5,7 @@ ARG GO_TOOLCHAIN
 ARG GO_VERSION
 ARG BASEIMAGE
 
-FROM golang:1.22.5 AS builder
+FROM --platform=linux/amd64 golang:1.22.5 AS builder
 
 ENV HTTP_PROXY=http://192.168.1.5:7890/
 ENV HTTPS_PROXY=http://192.168.1.5:7890/
