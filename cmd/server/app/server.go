@@ -314,11 +314,9 @@ func (p *Proxy) getTLSConfig(caFile, certFile, keyFile string, cipherSuites []st
 	}
 
 	tlsConfig := &tls.Config{
-		ClientAuth:   tls.RequireAndVerifyClientCert,
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    certPool,
 		MinVersion:   tls.VersionTLS12,
-		CipherSuites: cipherSuiteIDs,
 	}
 
 	return tlsConfig, nil
@@ -353,6 +351,14 @@ func (p *Proxy) runMTLSFrontendServer(ctx context.Context, o *options.ProxyRunOp
 		go runpprof.Do(context.Background(), labels, func(context.Context) { grpcServer.Serve(lis) })
 		stop = grpcServer.GracefulStop
 	} else {
+		// http-connect with no tls
+		httpServer := &http.Server{
+			Addr: ":8088",
+			Handler: &server.Tunnel{
+				Server: s,
+			},
+		}
+
 		// http-connect
 		server := &http.Server{
 			ReadHeaderTimeout: ReadHeaderTimeout,
@@ -368,6 +374,10 @@ func (p *Proxy) runMTLSFrontendServer(ctx context.Context, o *options.ProxyRunOp
 			if err != nil {
 				klog.ErrorS(err, "failed to shutdown server")
 			}
+			err = httpServer.Shutdown(ctx)
+			if err != nil {
+				klog.ErrorS(err, "failed to shutdown httpServer")
+			}
 		}
 		labels := runpprof.Labels(
 			"core", "mtlsHttpFrontend",
@@ -379,6 +389,12 @@ func (p *Proxy) runMTLSFrontendServer(ctx context.Context, o *options.ProxyRunOp
 				klog.ErrorS(err, "failed to listen on frontend port")
 			}
 		})
+		go func() {
+			err := httpServer.ListenAndServe()
+			if err != nil {
+				klog.ErrorS(err, "failed to listen on http master port")
+			}
+		}()
 	}
 
 	return stop, nil

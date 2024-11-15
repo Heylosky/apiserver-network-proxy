@@ -7,6 +7,10 @@ ARG BASEIMAGE
 
 FROM --platform=linux/${BUILDARCH} ${GO_TOOLCHAIN}:${GO_VERSION} as builder
 
+ENV HTTP_PROXY=http://192.168.1.5:7890/
+ENV HTTPS_PROXY=http://192.168.1.5:7890/
+ENV NO_PROXY=localhost,127.0.0.1,jjpt.harbor.com,dockerhub.kubekey.local
+
 # Copy in the go src
 WORKDIR /go/src/sigs.k8s.io/apiserver-network-proxy
 
