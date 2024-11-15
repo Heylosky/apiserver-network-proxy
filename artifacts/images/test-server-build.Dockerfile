@@ -5,7 +5,7 @@ ARG GO_TOOLCHAIN
 ARG GO_VERSION
 ARG BASEIMAGE
 
-FROM golang:1.23.2 AS builder
+FROM golang:1.22.5 AS builder
 
 ENV HTTP_PROXY=http://192.168.1.5:7890/
 ENV HTTPS_PROXY=http://192.168.1.5:7890/
@@ -32,7 +32,7 @@ COPY cmd/    cmd/
 ARG TARGETARCH
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -mod=vendor -v -a -ldflags '-extldflags "-static"' -o http-test-server sigs.k8s.io/apiserver-network-proxy/cmd/test-server
 
-FROM ${BASEIMAGE}
+FROM gcr.io/distroless/static-debian11:nonroot
 
 WORKDIR /
 COPY --from=builder /go/src/sigs.k8s.io/apiserver-network-proxy/http-test-server .
