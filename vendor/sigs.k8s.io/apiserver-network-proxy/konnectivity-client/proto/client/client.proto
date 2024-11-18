@@ -31,6 +31,7 @@ enum PacketType {
   DATA = 4;
   DIAL_CLS = 5;
   DRAIN = 6;
+  HEARTBEAT = 7;
 }
 
 message Packet {
@@ -44,6 +45,7 @@ message Packet {
     CloseResponse closeResponse = 6;
     CloseDial closeDial = 7;
     Drain drain = 8;
+    Heartbeat heartbeat = 9;
   }
 }
 
@@ -101,4 +103,8 @@ message Data {
 
     // stream data
     bytes data = 3;
+}
+
+message Heartbeat {
+  string message = 1;
 }

@@ -324,6 +324,29 @@ func (a *Client) Serve() {
 
 	klog.V(2).InfoS("Start serving", "serverID", a.serverID, "agentID", a.agentID)
 	go a.probe()
+
+	// 启动一个 goroutine 定期发送心跳包
+	go func() {
+		ticker := time.NewTicker(30 * time.Second) // 每 30 秒发送一次心跳包
+		defer ticker.Stop()
+		for {
+			select {
+			case <-a.stopCh:
+				return
+			case <-ticker.C:
+				heartbeatPacket := &client.Packet{
+					Type:    client.PacketType_HEARTBEAT,
+					Payload: &client.Packet_Heartbeat{Heartbeat: &client.Heartbeat{Message: "heartbeat"}},
+				}
+				if err := a.Send(heartbeatPacket); err != nil {
+					klog.ErrorS(err, "failed to send heartbeat packet")
+				} else {
+					klog.V(4).InfoS("sent heartbeat packet", "message", "heartbeat")
+				}
+			}
+		}
+	}()
+
 	for {
 		select {
 		case <-a.stopCh:
@@ -515,6 +538,9 @@ func (a *Client) Serve() {
 					continue
 				}
 			}
+
+		case client.PacketType_HEARTBEAT:
+			klog.V(4).InfoS("received HEARTBEAT", "message", pkt.GetHeartbeat().Message)
 
 		default:
 			klog.V(5).InfoS("unrecognized packet", "type", pkt)
