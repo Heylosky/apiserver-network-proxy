@@ -627,6 +627,10 @@ func (s *ProxyServer) serveRecvFrontend(frontend *GrpcFrontend, recvCh <-chan *c
 			}
 			klog.V(5).Infoln("DATA sent to Backend")
 
+		case client.PacketType_HEARTBEAT:
+			heartbeatMsg := pkt.GetHeartbeat().Message
+			klog.V(3).InfoS("Received HEARTBEAT", "message", heartbeatMsg)
+
 		default:
 			klog.V(5).InfoS("Ignoring unrecognized packet from frontend",
 				"type", pkt.Type, "connectionID", firstConnID)
@@ -941,6 +945,11 @@ func (s *ProxyServer) serveRecvBackend(backend *Backend, agentID string, recvCh 
 
 		case client.PacketType_DRAIN:
 			klog.V(2).InfoS("agent is draining", "agentID", agentID)
+
+		case client.PacketType_HEARTBEAT:
+			heartbeatMsg := pkt.GetHeartbeat().Message
+			klog.V(3).InfoS("Received HEARTBEAT", "message", heartbeatMsg)
+
 		default:
 			klog.V(5).InfoS("Ignoring unrecognized packet from backend", "packet", pkt, "agentID", agentID)
 		}
